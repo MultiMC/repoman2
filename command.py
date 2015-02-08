@@ -9,10 +9,11 @@ class Command(object):
 
     Contains functions for setting up the command's arguments and stuff.
     """
-    def __init__(self, name, args, func):
+    def __init__(self, func, name, args, description=None):
         self.name = name
-        self.func = func
+        self.desc = description
         self.args = args
+        self.func = func
 
     def __call__(self, args):
         self.func(**vars(args))
@@ -33,7 +34,7 @@ class Argument(object):
         self.kwargs = kwargs
 
 
-def command(name, args):
+def command(name, *args, **kwargs):
     """
     Decorator which takes a name and a function which should set up a command's
     parser as an argument. The decorator then creates a function to execute the
@@ -42,7 +43,7 @@ def command(name, args):
     # Hacky bullshit because Python decorator arguments are silly.
     # It might be better to just throw this out. Not sure.
     def command_(func):
-        return Command(name, args, func)
+        return Command(func, name, args, **kwargs)
     return command_
 
 

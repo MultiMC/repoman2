@@ -8,13 +8,14 @@ from command import command, Argument, with_channel
 from storage import FileStorage, md5_dir
 
 
-@command('push', [
-    Argument('platform'),
-    Argument('channel'),
-    Argument('vsn_id'),
-    Argument('vsn_name'),
-    Argument('vsn_path')
-])
+@command('push',
+         Argument('platform'),
+         Argument('channel'),
+         Argument('vsn_id'),
+         Argument('vsn_name'),
+         Argument('vsn_path'),
+         description='Push a new version to a particular channel.',
+)
 @with_channel
 def push(channel, collection,
          vsn_id, vsn_name, vsn_path,

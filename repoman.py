@@ -28,7 +28,7 @@ def main():
 
 
 def add_command(subparsers, cmd):
-    parser = subparsers.add_parser(cmd.name)
+    parser = subparsers.add_parser(cmd.name, description=cmd.desc)
     parser.set_defaults(command=cmd)
     cmd.setup(parser)
 
