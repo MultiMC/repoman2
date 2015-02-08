@@ -2,43 +2,66 @@
 
 import os, json, hashlib
 
+from storage import FileStorage
+
 
 class Collection(object):
-    def __init__(self, path):
+    """
+    Class for managing GoUpdate collections.
+
+    Contains information about the collection's path, base URL, file storage
+    URL, etc.
+    """
+    @classmethod
+    def load(cls, path):
+        """
+        Loads a collection from a folder with a collection.json config file.
+        """
+        obj = read_json(os.path.join(path, 'collection.json'))
+        # Base URL for all of the version metadata
+        base_url = obj['base_url']
+        # Base URL for file storage
+        storage_url = obj['storage_url']
+        # File storage path (relative to the collection's folder)
+        storage_path = obj['storage_path']
+        storage = FileStorage(storage_path, storage_url)
+
+        return cls(path, base_url, storage)
+
+    def __init__(self, path, url, storage):
         """
         Constructs and loads the collection.
         """
         self.path = path
-        self.platforms = []
-        self.load()
-
-    def load(self):
-        """
-        Loads information about the collection.
-        This will scan all directories in the collection for platforms.
-        """
-        dirs = [dir for dir in os.listdir(self.path)
-                if os.path.isdir(os.path.join(self.path, dir))]
-        for name in dirs:
-            try:
-                self.platforms.append(Platform.load(name, os.path.join(self.path, name)))
-            except:
-                print('Failed to load platform "{0}".'.format(name))
+        self.url = url
+        self.storage = storage
+        self.platforms = {}
 
     def get_platform(self, name):
-        for p in self.platforms:
-            if p.name == name:
+        """
+        Finds a platform in the collection with the given name.
+
+        Returns `None` if no such platform exists.
+        """
+        if name in self.platforms:
+            return name
+        else:
+            try:
+                p = self.platforms['name'] = Platform.load(self, name)
                 return p
-        return None
+            except IOError as e:
+                print('Failed loading platform: {0}'.format(str(e)))
+                return None
 
 
 
 class Platform(object):
     @classmethod
-    def load(cls, name, path):
+    def load(cls, col, name):
         """
         Loads a platform directory and all of its channels.
         """
+        path = os.path.join(col.path, name)
         obj = read_json(os.path.join(path, 'channels.json'))
         if obj['format_version'] != 0:
             raise 'Format version mismatch.'
@@ -51,10 +74,11 @@ class Platform(object):
             except Exception as e:
                 print('Failed to load channel "{0}" from platform "{1}": {2}'
                       .format(chan_obj['id'], path, str(e)))
-        return cls(name, path, channels)
+        return cls(col, name, channels)
 
-    def __init__(self, name, path, channels):
-        self.path = path
+    def __init__(self, col, name, channels):
+        self.collection = col
+        self.path = os.path.join(col.path, name)
         self.name = name
         self.channels = channels
 

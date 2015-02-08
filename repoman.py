@@ -3,42 +3,34 @@
 import os
 
 import repo
-import push
+
+from push import push
+from command import command, with_collection
 
 def main():
     import argparse
     parser = argparse.ArgumentParser(description='Manage GoUpdate repositories.')
 
-    parser.add_argument('--collection', type=str, default=os.getcwd(),
-                        help='path to the collection to manage')
-
-    parser.add_argument('--storage', type=str, default=os.path.join(os.getcwd(), "files"),
-                        help='folder to store update files in')
+    parser.add_argument('-c', '--collection', type=str, default=os.getcwd(),
+                        dest='collection', help='path to the collection to manage')
 
     subparsers = parser.add_subparsers()
 
-    setup_print_info(subparsers.add_parser("info"))
-    push.setup_cmd(subparsers.add_parser("push"))
+    add_command(subparsers, push)
 
     args = parser.parse_args()
     try:
-        args.func
+        args.command
     except AttributeError:
         parser.print_usage()
         exit(-1)
-    args.func(args)
+    args.command(args)
 
 
-def setup_print_info(parser):
-    """Sets up the subparser for the "info" command."""
-    parser.set_defaults(func=print_info)
-
-def print_info(args):
-    col = repo.Collection(args.collection)
-    for plat in col.platforms:
-        print('Platform "' + plat.path + '":')
-        for chan in plat.channels:
-            print('\tChannel "{0}": {1} versions.'.format(chan.name, len(chan.versions)))
+def add_command(subparsers, cmd):
+    parser = subparsers.add_parser(cmd.name)
+    parser.set_defaults(command=cmd)
+    cmd.setup(parser)
 
 
 if __name__ == '__main__':

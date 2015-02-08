@@ -19,9 +19,9 @@ class FileStorage(object):
     The class also manages a cache of the storage files' MD5s in an `cache.json`
     file inside the storage directory.
     """
-    def __init__(self, path):
+    def __init__(self, path, url):
         self.path = path
-        self.url = "http://localhost/" # TODO: Set storage URL
+        self.url = url
         # When this is None, it indicates MD5s haven't been loaded yet.
         self.md5_map = None
 
