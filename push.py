@@ -3,20 +3,18 @@
 import os, stat
 
 import repo
-from command import command, with_channel
+from command import command, Argument, with_channel
 
 from storage import FileStorage, md5_dir
 
 
-
-def setup(parser):
-    parser.add_argument("platform")
-    parser.add_argument("channel")
-    parser.add_argument("vsn_id")
-    parser.add_argument("vsn_name")
-    parser.add_argument("vsn_path")
-
-@command("push", setup)
+@command('push', [
+    Argument('platform'),
+    Argument('channel'),
+    Argument('vsn_id'),
+    Argument('vsn_name'),
+    Argument('vsn_path')
+])
 @with_channel
 def push(channel, collection,
          vsn_id, vsn_name, vsn_path,

@@ -9,19 +9,31 @@ class Command(object):
 
     Contains functions for setting up the command's arguments and stuff.
     """
-    def __init__(self, name, func, setup_func):
+    def __init__(self, name, args, func):
         self.name = name
         self.func = func
-        self.setup_func = setup_func
+        self.args = args
 
     def __call__(self, args):
         self.func(**vars(args))
 
     def setup(self, parser):
-        self.setup_func(parser)
+        """
+        Adds arguments for the command to the given argument parser.
+        """
+        for a in self.args:
+            parser.add_argument(*a.args, **a.kwargs)
+
+class Argument(object):
+    """
+    Class which represents an argument to be added to the argparse parser.
+    """
+    def __init__(self, *args, **kwargs):
+        self.args = args
+        self.kwargs = kwargs
 
 
-def command(name, setup_func):
+def command(name, args):
     """
     Decorator which takes a name and a function which should set up a command's
     parser as an argument. The decorator then creates a function to execute the
@@ -29,9 +41,9 @@ def command(name, setup_func):
     """
     # Hacky bullshit because Python decorator arguments are silly.
     # It might be better to just throw this out. Not sure.
-    def newfunc(func):
-        return Command(name, func, setup_func)
-    return newfunc
+    def command_(func):
+        return Command(name, args, func)
+    return command_
 
 
 def with_collection(func):
@@ -42,27 +54,27 @@ def with_collection(func):
     with the loaded collection object.
     """
     # TODO: Error handling.
-    def newfunc(*args, collection, **kwargs):
+    def with_collection_(*args, collection, **kwargs):
         col = repo.Collection.load(collection)
         return func(*args, collection = col, **kwargs)
-    return newfunc
+    return with_collection_
 
 def with_platform(func):
     """
     Like `with_collection`, but loads a platform as well.
     """
     @with_collection
-    def newfunc(*args, collection, platform, **kwargs):
+    def with_platform_(*args, collection, platform, **kwargs):
         plat = collection.get_platform(platform)
         return func(*args, collection = collection, platform = plat, **kwargs)
-    return newfunc
+    return with_platform_
 
 def with_channel(func):
     """
     Like `with_collection`, but loads a channel as well.
     """
     @with_platform
-    def newfunc(*args, platform, channel, **kwargs):
+    def with_channel_(*args, platform, channel, **kwargs):
         chan = platform.get_channel(channel)
         return func(*args, platform = platform, channel = chan, **kwargs)
-    return newfunc
+    return with_channel_
