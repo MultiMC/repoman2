@@ -17,7 +17,7 @@ class Collection(object):
         """
         Loads a collection from a folder with a collection.json config file.
         """
-        obj = read_json(os.path.join(path, 'collection.json'))
+        obj = read_json(os.path.join(path, 'config.json'))
         # Base URL for all of the version metadata
         base_url = obj['base_url']
         # Base URL for file storage
@@ -27,6 +27,14 @@ class Collection(object):
         storage = FileStorage(storage_path, storage_url)
 
         return cls(path, base_url, storage)
+
+    def save(self):
+        obj = dict(
+            base_url = self.url,
+            storage_url = self.storage.url,
+            storage_path = self.storage.path,
+        )
+        write_json(obj, self.get_config_path())
 
     def __init__(self, path, url, storage):
         """
@@ -52,6 +60,9 @@ class Collection(object):
             except IOError as e:
                 print('Failed loading platform: {0}'.format(str(e)))
                 return None
+
+    def get_config_path(self):
+        return os.path.join(self.path, 'config.json')
 
 
 

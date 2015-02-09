@@ -5,6 +5,7 @@ import os
 import repo
 
 from push import push
+from create import create
 from command import command, with_collection
 
 def main():
@@ -17,6 +18,7 @@ def main():
     subparsers = parser.add_subparsers()
 
     add_command(subparsers, push)
+    add_command(subparsers, create)
 
     args = parser.parse_args()
     try:
