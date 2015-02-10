@@ -2,6 +2,7 @@
 
 import os, json, hashlib
 
+from backend import Backend
 from storage import FileStorage
 
 
@@ -13,20 +14,20 @@ class Collection(object):
     URL, etc.
     """
     @classmethod
-    def load(cls, path):
+    def load(cls, backend, path):
         """
         Loads a collection from a folder with a collection.json config file.
         """
-        obj = read_json(os.path.join(path, 'config.json'))
+        obj = backend.read_json(os.path.join(path, 'config.json'))
         # Base URL for all of the version metadata
         base_url = obj['base_url']
         # Base URL for file storage
         storage_url = obj['storage_url']
         # File storage path (relative to the collection's folder)
         storage_path = obj['storage_path']
-        storage = FileStorage(storage_path, storage_url)
+        storage = FileStorage(backend, storage_path, storage_url)
 
-        return cls(path, base_url, storage)
+        return cls(backend, path, base_url, storage)
 
     def save(self):
         obj = dict(
@@ -34,12 +35,13 @@ class Collection(object):
             storage_url = self.storage.url,
             storage_path = self.storage.path,
         )
-        write_json(obj, self.get_config_path())
+        self.backend.write_json(obj, self.get_config_path())
 
-    def __init__(self, path, url, storage):
+    def __init__(self, backend, path, url, storage):
         """
         Constructs and loads the collection.
         """
+        self.backend = backend
         self.path = path
         self.url = url
         self.storage = storage
@@ -72,8 +74,9 @@ class Platform(object):
         """
         Loads a platform directory and all of its channels.
         """
+        b = col.backend
         path = os.path.join(col.path, name)
-        obj = read_json(os.path.join(path, 'channels.json'))
+        obj = b.read_json(os.path.join(path, 'channels.json'))
         if obj['format_version'] != 0:
             raise 'Format version mismatch.'
 
@@ -81,13 +84,14 @@ class Platform(object):
         chan_objs = obj['channels']
         for chan_obj in chan_objs:
             try:
-                channels.append(Channel.load(path, chan_obj))
+                channels.append(Channel.load(b, path, chan_obj))
             except Exception as e:
                 print('Failed to load channel "{0}" from platform "{1}": {2}'
                       .format(chan_obj['id'], path, str(e)))
         return cls(col, name, channels)
 
     def __init__(self, col, name, channels):
+        self.backend = col.backend
         self.collection = col
         self.path = os.path.join(col.path, name)
         self.name = name
@@ -103,12 +107,13 @@ class Platform(object):
 
 class Channel(object):
     @classmethod
-    def load(cls, path, obj):
+    def load(cls, backend, path, obj):
         """
         Loads a channel from the given platform directory based on info in the
         given dict, which should be loaded from the platform's `channels.json`
         file.
         """
+        b = backend
         id = obj['id']
         name = obj['name']
         desc = obj['description']
@@ -116,19 +121,20 @@ class Channel(object):
         path = os.path.join(path, id)
         
         # Load the index.json file.
-        idx = read_json(os.path.join(path, 'index.json'))
+        idx = b.read_json(os.path.join(path, 'index.json'))
         if idx['ApiVersion'] != 0:
             return None
         
         versions = []
         for vsn_obj in idx['Versions']:
             # TODO: Maybe check if the version file exists?
-            versions.append(Version.load(path, vsn_obj['Id'], vsn_obj['Name']))
+            versions.append(Version.load(b, path, vsn_obj['Id'], vsn_obj['Name']))
 
-        return cls(id, name, desc, url, path, versions)
+        return cls(b, id, name, desc, url, path, versions)
 
 
-    def __init__(self, id, name, desc, url, path, versions):
+    def __init__(self, backend, id, name, desc, url, path, versions):
+        self.backend = backend
         self.id = id
         self.name = name
         self.desc = desc
@@ -149,8 +155,9 @@ class Version(object):
     """
     
     @classmethod
-    def load(cls, chan_dir, id, name):
-        obj = read_json(os.path.join(chan_dir, str(id) + '.json'))
+    def load(cls, backend, chan_dir, id, name):
+        b = backend
+        obj = b.read_json(os.path.join(chan_dir, str(id) + '.json'))
         assert obj['ApiVersion'] == 0
         assert id == obj['Id']
         assert name == obj['Name']
@@ -164,7 +171,7 @@ class Version(object):
             md5 = file['MD5']
             perms = file['Perms']
             files.append(UpdateFile(path, md5, perms, sources, executable))
-        return cls(chan_dir, id, name, files)
+        return cls(b, chan_dir, id, name, files)
 
     def save(self):
         file_arr = []
@@ -183,9 +190,10 @@ class Version(object):
             'Name':       self.name,
             'Files':      file_arr,
         }
-        write_json(obj, self.vsn_file_path())
+        self.backend.write_json(obj, self.vsn_file_path())
 
-    def __init__(self, chan_dir, id, name, files):
+    def __init__(self, backend, chan_dir, id, name, files):
+        self.backend = backend
         self.chan_dir = chan_dir
         self.id = id
         self.name = name

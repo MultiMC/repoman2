@@ -55,9 +55,9 @@ def with_collection(func):
     with the loaded collection object.
     """
     # TODO: Error handling.
-    def with_collection_(*args, collection, **kwargs):
-        col = repo.Collection.load(collection)
-        return func(*args, collection = col, **kwargs)
+    def with_collection_(*args, backend, collection, **kwargs):
+        col = repo.Collection.load(backend, collection)
+        return func(*args, backend = backend, collection = col, **kwargs)
     return with_collection_
 
 def with_platform(func):

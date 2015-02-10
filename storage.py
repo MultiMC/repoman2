@@ -19,7 +19,8 @@ class FileStorage(object):
     The class also manages a cache of the storage files' MD5s in an `cache.json`
     file inside the storage directory.
     """
-    def __init__(self, path, url):
+    def __init__(self, backend, path, url):
+        self.backend = backend
         self.path = path
         self.url = url
         # When this is None, it indicates MD5s haven't been loaded yet.
@@ -32,10 +33,10 @@ class FileStorage(object):
         """
         # We need to determine the destination file name. We can do this by
         # prepending the file's hash to the filename.
-        hash = hash_file(file).hexdigest()
+        hash = self.backend.get_md5(file)
         _, filename = os.path.split(file)
         dest = os.path.join(self.path, '{0}-{1}'.format(hash, filename))
-        shutil.copyfile(file, dest)
+        self.backend.upload_file(file, dest)
         return dest
 
     def load_md5s(self):
@@ -43,7 +44,7 @@ class FileStorage(object):
         Loads the MD5s of all of the files in storage.
         """
         # TODO: Caching
-        self.md5_map = md5_dir(self.path)
+        self.md5_map = self.backend.md5_dir(self.path)
 
     @md5s_loaded
     def is_md5_present(self, md5):
@@ -62,21 +63,3 @@ class FileStorage(object):
             return self.md5_map[md5]
         else:
             return None
-
-
-def md5_dir(path):
-    """
-    Checks the MD5sum of all of the files in a directory and returns a
-    dictionary mapping MD5s to filenames.
-    """
-    files = [os.path.join(path, file) for file in os.listdir(path)]
-    md5_map = dict()
-    for root, dirs, files in os.walk(path):
-        for file in files:
-            file_path = os.path.join(root, file)
-            md5_map[hash_file(file_path).hexdigest()] = file_path
-    return md5_map
-
-def hash_file(path):
-    with open(path, 'rb') as f:
-        return hashlib.md5(f.read())

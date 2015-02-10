@@ -1,11 +1,11 @@
 # The "push" command pushes a new version to a particular channel.
 
-import os, stat
+import os, stat, hashlib
 
 import repo
 from command import command, Argument, with_channel
 
-from storage import FileStorage, md5_dir
+from storage import FileStorage
 
 
 @command('push',
@@ -56,5 +56,22 @@ def push(channel, collection,
         vsn_files.append(repo.UpdateFile(path, md5, perms, sources, executable));
     
     # Now, we just need to create the new version file and save it.
-    vsn = repo.Version(channel.path, vsn_id, vsn_name, vsn_files)
+    vsn = repo.Version(channel.backend, channel.path, vsn_id, vsn_name, vsn_files)
     vsn.save()
+
+
+def md5_dir(path):
+    """
+    Checks the MD5sum of all of the files in a directory and returns a
+    dictionary mapping MD5s to filenames.
+    """
+    md5_map = dict()
+    for root, dirs, files in os.walk(path):
+        for file in files:
+            file_path = os.path.join(root, file)
+            md5_map[hash_file(file_path).hexdigest()] = file_path
+    return md5_map
+
+def hash_file(path):
+    with open(path, 'rb') as f:
+        return hashlib.md5(f.read())
