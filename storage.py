@@ -33,7 +33,7 @@ class FileStorage(object):
         """
         # We need to determine the destination file name. We can do this by
         # prepending the file's hash to the filename.
-        hash = self.backend.get_md5(file)
+        hash = hash_file(file)
         _, filename = os.path.split(file)
         dest = os.path.join(self.path, '{0}-{1}'.format(hash, filename))
         self.backend.upload_file(file, dest)
@@ -63,3 +63,7 @@ class FileStorage(object):
             return self.md5_map[md5]
         else:
             return None
+
+def hash_file(path):
+    with open(path, 'rb') as f:
+        return hashlib.md5(f.read()).hexdigest()

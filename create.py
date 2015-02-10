@@ -4,7 +4,7 @@ import os
 
 import repo, storage
 
-from command import command, Argument
+from command import command, Argument, with_collection
 
 @command("create",
          Argument('path', help=
@@ -17,9 +17,18 @@ from command import command, Argument
          Argument('storage_url', help=
                   """URL of the file storage's root directory"""),
          description='Creates a new collection.')
-def create(path, url, storage_path, storage_url, **kwargs):
+def create(backend, path, url, storage_path, storage_url, **kwargs):
     if not os.path.isdir(path):
         os.mkdir(path)
-    store = storage.FileStorage(storage_path, storage_url)
-    collection = repo.Collection(path, url, store)
+    store = storage.FileStorage(backend, storage_path, storage_url)
+    collection = repo.Collection(backend, path, url, store)
     collection.save()
+
+@command("add-platform",
+         Argument('id', help=
+                  """the platform's ID string"""),
+         description='Creates a new platform.')
+@with_collection
+def add_platform(backend, collection, id, **kwargs):
+    plat = collection.new_platform(id)
+    plat.save()

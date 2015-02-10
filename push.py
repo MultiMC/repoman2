@@ -27,8 +27,6 @@ def push(channel, collection,
     """
     storage = collection.storage
 
-    last_vsn = channel.get_latest_vsn()
-
     # Pushing a new version is a somewhat complicated process.
     # We need to be able to make a comparison between the files of the version
     # we're pushing and the files from the version we last pushed in order to
@@ -55,9 +53,8 @@ def push(channel, collection,
         # Now construct an UpdateFile object for it and add it to the list.
         vsn_files.append(repo.UpdateFile(path, md5, perms, sources, executable));
     
-    # Now, we just need to create the new version file and save it.
-    vsn = repo.Version(channel.backend, channel.path, vsn_id, vsn_name, vsn_files)
-    vsn.save()
+    # Now, we just need to create the new version.
+    vsn = channel.add_version(vsn_id, vsn_name, vsn_files)
 
 
 def md5_dir(path):

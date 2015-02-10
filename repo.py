@@ -63,6 +63,15 @@ class Collection(object):
                 print('Failed loading platform: {0}'.format(str(e)))
                 return None
 
+    def new_platform(self, id):
+        """
+        Creates a new platform within the collection. Does not save the platform
+        to disk. To save the platform, call `platform.save()`.
+        """
+        p = Platform(self, id, [])
+        self.platforms[id] = p
+        return p
+
     def get_config_path(self):
         return os.path.join(self.path, 'config.json')
 
@@ -90,7 +99,15 @@ class Platform(object):
                       .format(chan_obj['id'], path, str(e)))
         return cls(col, name, channels)
 
+    def save(self):
+        chan_objs = []
+        self.backend.write_json(dict(
+            format_version = 0,
+            channels = [chan.todict() for chan in self.channels]
+        ), self.channels_file_path())
+
     def __init__(self, col, name, channels):
+        self.collection = col
         self.backend = col.backend
         self.collection = col
         self.path = os.path.join(col.path, name)
@@ -98,10 +115,30 @@ class Platform(object):
         self.channels = channels
 
     def get_channel(self, id):
+        """
+        Returns a channel with the given ID, creating it if it doesn't exist.
+
+        If the channel is created, `save()` will be called automatically. The
+        created channel's name will be the same as its ID, though this can be
+        changed manually if necessary. The channel's description will be empty
+        and the URL will be determined automatically.
+        """
         for ch in self.channels:
             if ch.id == id:
                 return ch
-        return None
+        return self.new_channel(id)
+
+    def new_channel(self, id, name=None, desc=''):
+        if name == None: name = id
+        chan_url = self.collection.url + self.name + '/' + id
+        chan_path = os.path.join(self.path, id)
+        chan = Channel(self.backend, id, name, desc, chan_url, chan_path, [])
+        self.channels.append(chan)
+        self.save()
+        return chan
+
+    def channels_file_path(self):
+        return os.path.join(self.path, 'channels.json')
 
 
 
@@ -128,10 +165,31 @@ class Channel(object):
         versions = []
         for vsn_obj in idx['Versions']:
             # TODO: Maybe check if the version file exists?
-            versions.append(Version.load(b, path, vsn_obj['Id'], vsn_obj['Name']))
+            versions.append(dict(
+                id=vsn_obj['Id'],
+                name=vsn_obj['Name'],
+            ))
 
         return cls(b, id, name, desc, url, path, versions)
 
+    def save_index(self):
+        """
+        Saves the channel's index file.
+        """
+        vsn_objs = [dict(Id = v['id'], Name = v['name']) for v in self.versions]
+        self.backend.write_json(dict(
+            Versions = vsn_objs,
+            Channels = [], # This is unused.
+            ApiVersion = 0,
+        ), self.index_path())
+
+    def todict(self):
+        return dict(
+            id = self.id,
+            name = self.name,
+            description = self.desc,
+            url = self.url
+        )
 
     def __init__(self, backend, id, name, desc, url, path, versions):
         self.backend = backend
@@ -140,12 +198,35 @@ class Channel(object):
         self.desc = desc
         self.url = url
         self.path = path
-        self.versions = sorted(versions, key=lambda v: v.id)
+        self.versions = versions
+
+    def get_version(self, id):
+        """
+        Loads full version info for the version with the given ID.
+        """
+        for v in self.versions:
+            if v['id'] == id: return v
+
+    def add_version(self, id, name, files):
+        """
+        Adds a new version. Saves both the version and the channel's JSON files
+        and returns the added version.
+        """
+        v = Version(self.backend, self.path, id, name, files)
+        v.save()
+        self.versions.append(dict(id=id, name=name))
+        self.save_index()
+        return v
 
     def get_latest_vsn(self):
         """Gets the channel's newest version."""
         # The last version in the list should be the newest one.
-        self.versions[len(self.versions)-1]
+        if len(self.versions > 0):
+            return sorted(self.versions, key=lambda v: v['id'])[len(self.versions)-1]
+        else: return None
+
+    def index_path(self):
+        return os.path.join(self.path, 'index.json')
 
 
 
