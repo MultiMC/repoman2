@@ -72,6 +72,26 @@ class Collection(object):
         self.platforms[id] = p
         return p
 
+    def list_platforms(self):
+        dirs = self.backend.list_dir(self.path, type='dirs')
+        for id in dirs:
+            yield self.get_platform(id)
+
+    def all_versions_where(self, pred):
+        """
+        A generator which lists of every single version whose ID and name match
+        the given predicate.
+
+        The predicate takes a tuple with the version ID and name and returns
+        true or false indicating whether the version should be listed.
+
+        This will be horribly slow on non-disk backends like S3.
+        """
+        for p in self.list_platforms():
+            for ch in p.channels:
+                for vsn in ch.all_versions_where(pred):
+                    yield vsn
+
     def get_config_path(self):
         return os.path.join(self.path, 'config.json')
 
@@ -101,6 +121,7 @@ class Platform(object):
 
     def save(self):
         chan_objs = []
+        print('Saving platform info for "{0}".'.format(self.name))
         self.backend.write_json(dict(
             format_version = 0,
             channels = [chan.todict() for chan in self.channels]
@@ -199,13 +220,19 @@ class Channel(object):
         self.url = url
         self.path = path
         self.versions = versions
+        self.loaded_vsns = dict()
 
     def get_version(self, id):
         """
         Loads full version info for the version with the given ID.
         """
+        if id in self.loaded_vsns:
+            return self.loaded_vsns[id]
         for v in self.versions:
-            if v['id'] == id: return v
+            if v['id'] == id:
+                vsn = Version.load(self.backend, self.path, v['id'], v['name'])
+                self.loaded_vsns[v['id']] = vsn
+                return vsn
 
     def add_version(self, id, name, files):
         """
@@ -218,12 +245,34 @@ class Channel(object):
         self.save_index()
         return v
 
+    def delete_version(self):
+        """
+        Deletes the version with the given ID.
+
+        Does not remove the version's files.
+        """
+        pass
+
     def get_latest_vsn(self):
         """Gets the channel's newest version."""
         # The last version in the list should be the newest one.
         if len(self.versions > 0):
             return sorted(self.versions, key=lambda v: v['id'])[len(self.versions)-1]
         else: return None
+
+    def all_versions_where(self, pred):
+        """
+        A generator which lists of every single version whose ID and name match
+        the given predicate.
+        
+        The predicate takes a tuple with the version ID and name and returns
+        true or false indicating whether the version should be listed.
+
+        This will be horribly slow on non-disk backends like S3.
+        """
+        for v in self.versions:
+            if pred(v['id'], v['name']):
+                yield self.get_version(v['id'])
 
     def index_path(self):
         return os.path.join(self.path, 'index.json')
@@ -246,7 +295,7 @@ class Version(object):
         for file in obj['Files']:
             # We only support the 'http' type anyway, so we'll just load sources
             # as a list of URLs.
-            sources = map(lambda src: src[0]['Url'], file['Sources'])
+            sources = map(lambda src: src['Url'], file['Sources'])
             path = file['Path']
             executable = file['Executable']
             md5 = file['MD5']
@@ -271,6 +320,7 @@ class Version(object):
             'Name':       self.name,
             'Files':      file_arr,
         }
+        print('Saving version info to {0}.'.format(self.vsn_file_path()))
         self.backend.write_json(obj, self.vsn_file_path())
 
     def __init__(self, backend, chan_dir, id, name, files):

@@ -46,19 +46,21 @@ class S3Backend(Backend):
     
     def list_dir(self, path, type='all'):
         """
-        Lists all of the files in the given directory.
+        Lists all of the files in the given directory non-recursively.
         
         If `type` is 'all', lists both directories and files. If `type` is
         'dirs', lists only directories. If `type` is 'files', lists only files.
         """
-        # There must be a better way to do this, but I'm not sure.
-        indir = [n.key for n in self.bucket.list() if n.key.startswith(path)]
-        if type == 'dirs':
-            return [n for n in indir if n.endswith('/')]
-        elif type == 'files':
-            return [os.path.basename(n) for n in indir if not n.endswith('/')]
-        else:
-            return indir
+        if not type in ['dirs', 'files', 'all']:
+            raise ValueError('Invalid list_dir type: {0}'.format(type))
+
+        list = []
+        keys = [n.key for n in self.bucket.list(path)]
+        if type == 'files' or type == 'all':
+            list += [k for k in keys if is_file_key(k)]
+        if type == 'dirs' or type == 'all':
+            list += key_dirs(path, keys)
+        return list
 
     def upload_file(self, src, dest):
         """
@@ -76,3 +78,19 @@ class S3Backend(Backend):
         k = self.bucket.get_key(path)
         if k == None: return None
         return k.etag.strip('"')
+
+
+def is_file_key(path):
+    """Returns True if the given S3 key is a file."""
+    return not path.endswith('/')
+
+def key_dirs(path, keys):
+    """Iterates over a list of keys and returns a list of directories."""
+    # FIXME: This is CrAzY!
+    if path.endswith('/'): path = path[:-1]
+    dirset = set()
+    for k in keys:
+        kp = os.path.dirname(k)
+        if os.path.dirname(kp) == path:
+            dirset.add(os.path.basename(kp))
+    return list(dirset)

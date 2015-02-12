@@ -6,6 +6,7 @@ import repo
 
 from push import push
 from create import create, add_platform
+from cleanup import delete_old, mod_urls
 from command import command, with_collection
 from backend.disk import DiskBackend
 from backend.s3 import S3Backend
@@ -27,6 +28,9 @@ def main():
     add_command(subparsers, push)
     add_command(subparsers, create)
     add_command(subparsers, add_platform)
+
+    add_command(subparsers, delete_old)
+    add_command(subparsers, mod_urls)
 
     args = parser.parse_args()
 
