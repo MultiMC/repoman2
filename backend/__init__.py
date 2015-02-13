@@ -14,13 +14,13 @@ class Backend(object):
         """
         Reads a JSON file from the given path.
         """
-        raise NotImplemented()
+        raise NotImplementedError()
 
     def write_json(self, obj, path):
         """
         Writes a JSON file to the given path.
         """
-        raise NotImplemented()
+        raise NotImplementedError()
     
     def list_dir(self, path, type='all'):
         """
@@ -29,20 +29,26 @@ class Backend(object):
         If `type` is 'all', lists both directories and files. If `type` is
         'dirs', lists only directories. If `type` is 'files', lists only files.
         """
-        raise NotImplemented()
+        raise NotImplementedError()
 
     def upload_file(self, src, dest):
         """
         Uploads a local file from the given `src` path to the given `dest` path
         on the backend.
         """
-        raise NotImplemented()
+        raise NotImplementedError()
+
+    def delete_file(self, path):
+        """
+        Deletes the given file.
+        """
+        raise NotImplementedError()
 
     def get_md5(self, path):
         """
         Returns a hex digest of the MD5sum of the file at the given path.
         """
-        raise NotImplemented()
+        raise NotImplementedError()
 
     def md5_dir(self, path):
         """

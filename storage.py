@@ -39,6 +39,14 @@ class FileStorage(object):
         self.backend.upload_file(file, dest)
         return dest
 
+    def remove_file(self, filename):
+        """
+        Deletes the given file.
+        """
+        self.backend.delete_file(os.path.join(self.path, filename))
+        if self.md5_map != None:
+            md5_map = dict([(k, v) for k, v in self.md5_map.items if v != path])
+
     def load_md5s(self):
         """
         Loads the MD5s of all of the files in storage.
@@ -63,6 +71,9 @@ class FileStorage(object):
             return self.md5_map[md5]
         else:
             return None
+
+    def get_all_files(self):
+        return [os.path.basename(f) for f in self.backend.list_dir(self.path, 'files')]
 
 def hash_file(path):
     with open(path, 'rb') as f:

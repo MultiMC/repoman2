@@ -60,7 +60,7 @@ class S3Backend(Backend):
             list += [k for k in keys if is_file_key(k)]
         if type == 'dirs' or type == 'all':
             list += key_dirs(path, keys)
-        return list
+        return [path_last_component(p) for p in list]
 
     def upload_file(self, src, dest):
         """
@@ -70,6 +70,14 @@ class S3Backend(Backend):
         k = Key(self.bucket)
         k.key = dest
         k.set_contents_from_filename(src)
+
+    def delete_file(self, path):
+        """
+        Uploads a local file from the given `src` path to the given `dest` path
+        on the backend.
+        """
+        k = self.bucket.get_key(path)
+        k.delete()
 
     def get_md5(self, path):
         """
@@ -94,3 +102,10 @@ def key_dirs(path, keys):
         if os.path.dirname(kp) == path:
             dirset.add(os.path.basename(kp))
     return list(dirset)
+
+
+def path_last_component(path):
+    if path.endswith('/'):
+        return os.path.basename(path.strip('/')) + '/'
+    else:
+        return os.path.basename(path)

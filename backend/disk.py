@@ -49,6 +49,9 @@ class DiskBackend(Backend):
         """
         shutil.copyfile(src, self.subpath(dest))
 
+    def delete_file(self, path):
+        os.remove(path)
+
     def get_md5(self, path):
         """
         Returns a hex digest of the MD5sum of the file at the given path.

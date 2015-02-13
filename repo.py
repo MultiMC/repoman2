@@ -286,6 +286,7 @@ class Version(object):
     
     @classmethod
     def load(cls, backend, chan_dir, id, name):
+        print('Loading version "{0}" ({1}).'.format(name, id))
         b = backend
         obj = b.read_json(os.path.join(chan_dir, str(id) + '.json'))
         assert obj['ApiVersion'] == 0

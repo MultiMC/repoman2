@@ -16,9 +16,6 @@ from storage import FileStorage
 )
 @with_collection
 def mod_urls(collection, match, replace, commit, **kwargs):
-    storage = collection.storage
-
-
     # For every single version, update file URLs.
     for vsn in collection.all_versions_where(lambda id, name: True):
         for f in vsn.files:
@@ -41,10 +38,65 @@ def mod_url(match, replace, url):
          Argument('platform'),
          Argument('channel'),
          Argument('older_than', type=int, help="""the minimum version ID to keep"""),
-         description='Removes versions in the given channel whose ID is less than the given value.',
+         Argument('--commit', action='store_true', help='if not given, changes are only simulated'),
+         description="""
+         Removes versions in the given channel whose ID is less than the given value.
+         Does not remove the version's files. For that, use the prune command.
+         """,
 )
 @with_channel
-def delete_old(channel, collection, older_than, **kwargs):
+def delete_old(channel, collection, older_than, commit, **kwargs):
+    for vsn in channel.all_versions_where(lambda id, name: id < older_than):
+        print('Delete version "{0}" (version ID {1}).'.format(vsn.name, vsn.id))
+        if commit: channel.delete_version(vsn.id)
+
+@command('orphan-files',
+         Argument('--delete', action='store_true', help='if given, kill orphans'),
+         description="""Removes unused files from storage.""",
+)
+@with_collection
+def orphan_files(collection, delete, **kwargs):
     storage = collection.storage
-    
-    pass
+
+    # Load a set of all files used.
+    files = linked_files(collection)
+    # Load a set of all files in storage.
+    storage_files = set(storage.get_all_files())
+    # Subtract used files.
+    to_delete = storage_files - files
+    print('Delete: {0}'.format(to_delete))
+    print('{0} orphans found.'.format(len(to_delete)))
+    if delete:
+        for f in to_delete:
+            storage.remove_file(f)
+
+@command('dead-versions',
+         #Argument('--delete', action='store_true', help='if given, remove dead versions'),
+         description="""Lists versions with missing files.""",
+)
+@with_collection
+def dead_versions(collection, **kwargs):
+    storage = collection.storage
+    storage_files = set(storage.get_all_files())
+    for vsn in collection.all_versions_where(lambda id, name: True):
+        files = set()
+        for f in vsn.files:
+            for src in f.sources:
+                files.add(os.path.basename(src))
+        dead_files = files - storage_files
+        if len(dead_files) > 0:
+            print('Version "{0}" ({1}) is dead. Dead files: {2}'.format(
+                vsn.name, vsn.id, dead_files))
+
+
+def linked_files(collection):
+    """
+    Returns a set containing the file names of every file linked to in the given
+    collection.
+    """
+    files = set()
+    for vsn in collection.all_versions_where(lambda id, name: True):
+        for f in vsn.files:
+            for src in f.sources:
+                files.add(os.path.basename(src))
+    return files
