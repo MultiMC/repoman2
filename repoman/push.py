@@ -2,10 +2,10 @@
 
 import os, stat, hashlib
 
-import repo
-from command import command, Argument, with_channel
+import repoman.repo as repo
+from repoman.command import command, Argument, with_channel
 
-from storage import FileStorage
+from repoman.storage import FileStorage
 
 
 @command('push',

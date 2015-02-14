@@ -2,9 +2,10 @@
 
 import os
 
-import repo, storage
+import repoman.repo as repo
+import repoman.storage as storage
 
-from command import command, Argument, with_collection
+from repoman.command import command, Argument, with_collection
 
 @command("create",
          Argument('path', help=

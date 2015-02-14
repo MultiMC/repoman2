@@ -1,4 +1,4 @@
-from backend import Backend
+from repoman.backend import Backend
 
 import os, json, hashlib, shutil
 

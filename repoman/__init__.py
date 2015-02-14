@@ -2,14 +2,14 @@
 
 import os
 
-import repo
+import repoman.repo as repo
 
-from push import push
-from create import create, add_platform
-from cleanup import delete_old, mod_urls, orphan_files, dead_versions
-from command import command, with_collection
-from backend.disk import DiskBackend
-from backend.s3 import S3Backend
+from repoman.push import push
+from repoman.create import create, add_platform
+from repoman.cleanup import delete_old, mod_urls, orphan_files, dead_versions
+from repoman.command import command, with_collection
+from repoman.backend.disk import DiskBackend
+from repoman.backend.s3 import S3Backend
 
 def main():
     import argparse

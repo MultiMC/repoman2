@@ -1,6 +1,6 @@
 # Module with useful tools for defining subcommands.
 
-import repo
+import repoman.repo as repo
 
 
 class Command(object):

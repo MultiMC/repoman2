@@ -2,8 +2,8 @@
 
 import os, json, hashlib
 
-from backend import Backend
-from storage import FileStorage
+from repoman.backend import Backend
+from repoman.storage import FileStorage
 
 
 class Collection(object):

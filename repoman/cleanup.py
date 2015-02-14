@@ -2,10 +2,10 @@
 
 import os, re
 
-import repo
-from command import command, Argument, with_channel, with_collection
+import repoman.repo as repo
+from repoman.command import command, Argument, with_channel, with_collection
 
-from storage import FileStorage
+from repoman.storage import FileStorage
 
 
 @command('mod-urls',
