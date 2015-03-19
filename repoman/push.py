@@ -32,9 +32,11 @@ def push(channel, collection,
     # we're pushing and the files from the version we last pushed in order to
     # see which ones have changed.
 
+    os.chdir(vsn_path)
+
     # First, we check the MD5sums of all of the files in our new version.
-    new_md5s = md5_dir(vsn_path)
-    
+    new_md5s = md5_dir('.')
+
     # Our goal in is to build a list of `UpdateFile` objects. To do this, we'll
     # go through our list of MD5s, add any new files to storage, and build the
     # list.
@@ -51,8 +53,8 @@ def push(channel, collection,
         # TODO: Handle slash nonsense better when joining URLs.
         sources = [storage.url + os.path.relpath(stored, storage.path)]
         # Now construct an UpdateFile object for it and add it to the list.
-        vsn_files.append(repo.UpdateFile(path, md5, perms, sources, executable));
-    
+        vsn_files.append(repo.UpdateFile(os.path.normpath(path), md5, perms, sources, executable));
+
     # Now, we just need to create the new version.
     vsn = channel.add_version(vsn_id, vsn_name, vsn_files)
 
