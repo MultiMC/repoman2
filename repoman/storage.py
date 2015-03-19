@@ -11,11 +11,11 @@ def md5s_loaded(func):
 class FileStorage(object):
     """
     Class for managing a GoUpdate collection's file storage.
-    
+
     This is the central folder where all of the update files themselves are
     stored. This class is used for things such as checking the MD5s of existing
     files and adding new files to storage.
-    
+
     The class also manages a cache of the storage files' MD5s in an `cache.json`
     file inside the storage directory.
     """
@@ -36,6 +36,15 @@ class FileStorage(object):
         hash = hash_file(file)
         _, filename = os.path.split(file)
         dest = os.path.join(self.path, '{0}-{1}'.format(hash, filename))
+        self.backend.upload_file(file, dest)
+        return dest
+
+    def add_raw_file(self, file):
+        """
+        Adds the given file to storage without messing with it.
+        """
+        _, filename = os.path.split(file)
+        dest = os.path.join(self.path, filename)
         self.backend.upload_file(file, dest)
         return dest
 

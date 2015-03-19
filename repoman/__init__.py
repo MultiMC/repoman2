@@ -5,6 +5,7 @@ import os
 import repoman.repo as repo
 
 from repoman.push import push
+from repoman.pushfile import push_file
 from repoman.create import create, add_platform
 from repoman.cleanup import delete_old, mod_urls, orphan_files, dead_versions
 from repoman.command import command, with_collection
@@ -26,6 +27,7 @@ def main():
     subparsers = parser.add_subparsers()
 
     add_command(subparsers, push)
+    add_command(subparsers, push_file)
     add_command(subparsers, create)
     add_command(subparsers, add_platform)
 
