@@ -151,7 +151,7 @@ class Platform(object):
 
     def new_channel(self, id, name=None, desc=''):
         if name == None: name = id
-        chan_url = self.collection.url + self.name + '/' + id
+        chan_url = self.collection.url + self.name + '/' + id + '/'
         chan_path = os.path.join(self.path, id)
         chan = Channel(self.backend, id, name, desc, chan_url, chan_path, [])
         self.channels.append(chan)
