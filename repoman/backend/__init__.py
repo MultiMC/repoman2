@@ -21,11 +21,11 @@ class Backend(object):
         Writes a JSON file to the given path.
         """
         raise NotImplementedError()
-    
+
     def list_dir(self, path, type='all'):
         """
         Lists all of the files in the given directory.
-        
+
         If `type` is 'all', lists both directories and files. If `type` is
         'dirs', lists only directories. If `type` is 'files', lists only files.
         """
@@ -63,3 +63,9 @@ class Backend(object):
             file_path = os.path.join(path, file)
             md5_map[self.get_md5(file_path)] = file_path
         return md5_map
+
+    def sanitize_file_name(self, filename):
+        """
+        Returns a sanitized version of the filename, suitable for the backend
+        """
+        raise NotImplementedError()

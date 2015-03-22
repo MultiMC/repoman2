@@ -8,7 +8,7 @@ from boto.s3.key import Key
 class S3Backend(Backend):
     """
     A storage backend which uses Amazon S3.
-    
+
     AWS IDs are read from environment variables.
     """
     def __init__(self, bucket_name):
@@ -32,6 +32,12 @@ class S3Backend(Backend):
         k.set_metadata('Content-Type', 'application/json')
         k.set_contents_from_string(string)
 
+    def sanitize_file_name(self, filename):
+        """
+        Returns a sanitized version of the filename, suitable for the backend
+        """
+        return filename.replace('+','X')
+
     def read_json(self, path):
         """
         Reads a JSON file from the given path.
@@ -43,11 +49,11 @@ class S3Backend(Backend):
         Writes a JSON file to the given path.
         """
         return self.set_contents(json.dumps(obj), path)
-    
+
     def list_dir(self, path, type='all'):
         """
         Lists all of the files in the given directory non-recursively.
-        
+
         If `type` is 'all', lists both directories and files. If `type` is
         'dirs', lists only directories. If `type` is 'files', lists only files.
         """

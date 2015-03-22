@@ -25,11 +25,11 @@ class DiskBackend(Backend):
         """
         with open(self.subpath(path), 'w') as f:
             json.dump(obj, f)
-    
+
     def list_dir(self, path_, type='all'):
         """
         Lists all of the files in the given directory.
-        
+
         If `type` is 'all', lists both directories and files. If `type` is
         'dirs', lists only directories. If `type` is 'files', lists only files.
         """
@@ -58,3 +58,9 @@ class DiskBackend(Backend):
         """
         with open(self.subpath(path), 'rb') as f:
             return hashlib.md5(f.read()).hexdigest()
+
+    def sanitize_file_name(self, filename):
+        """
+        Returns a sanitized version of the filename, suitable for the backend
+        """
+        return filename

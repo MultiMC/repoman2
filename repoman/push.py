@@ -41,19 +41,19 @@ def push(channel, collection,
     # go through our list of MD5s, add any new files to storage, and build the
     # list.
     vsn_files = []
-    for (md5, path) in new_md5s.items():
+    for (md5, localPath) in new_md5s.items():
         # First, if the file is not already present in storage, we need to add
         # it.
-        stored = storage.file_for_md5(md5)
-        if stored == None:
-            print('Adding new file "{0}".'.format(path))
-            stored = storage.add_file(path)
-        perms = stat.S_IMODE(os.stat(path).st_mode)
+        remotePath = storage.file_for_md5(md5)
+        if remotePath == None:
+            print('Adding new file "{0}".'.format(localPath))
+            remotePath = storage.add_file(localPath)
+        perms = stat.S_IMODE(os.stat(localPath).st_mode)
         executable = (perms & stat.S_IXUSR) != 0
         # TODO: Handle slash nonsense better when joining URLs.
-        sources = [storage.url + os.path.relpath(stored, storage.path)]
+        sources = [storage.url + os.path.relpath(remotePath, storage.path)]
         # Now construct an UpdateFile object for it and add it to the list.
-        vsn_files.append(repo.UpdateFile(os.path.normpath(path), md5, perms, sources, executable));
+        vsn_files.append(repo.UpdateFile(os.path.normpath(localPath), md5, perms, sources, executable));
 
     # Now, we just need to create the new version.
     vsn = channel.add_version(vsn_id, vsn_name, vsn_files)

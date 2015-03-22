@@ -35,7 +35,8 @@ class FileStorage(object):
         # prepending the file's hash to the filename.
         hash = hash_file(file)
         _, filename = os.path.split(file)
-        dest = os.path.join(self.path, '{0}-{1}'.format(hash, filename))
+        saneFileName = self.backend.sanitize_file_name(filename)
+        dest = os.path.join(self.path, '{0}-{1}'.format(hash, saneFileName))
         self.backend.upload_file(file, dest)
         return dest
 
@@ -44,7 +45,8 @@ class FileStorage(object):
         Adds the given file to storage without messing with it.
         """
         _, filename = os.path.split(file)
-        dest = os.path.join(self.path, filename)
+        saneFileName = self.backend.sanitize_file_name(filename)
+        dest = os.path.join(self.path, saneFileName)
         self.backend.upload_file(file, dest)
         return dest
 
