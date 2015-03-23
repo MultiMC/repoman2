@@ -41,7 +41,7 @@ def push(channel, collection,
     # go through our list of MD5s, add any new files to storage, and build the
     # list.
     vsn_files = []
-    for (md5, localPath) in new_md5s.items():
+    for (localPath, md5) in new_md5s.items():
         # First, if the file is not already present in storage, we need to add
         # it.
         remotePath = storage.file_for_md5(md5)
@@ -68,7 +68,7 @@ def md5_dir(path):
     for root, dirs, files in os.walk(path):
         for file in files:
             file_path = os.path.join(root, file)
-            md5_map[hash_file(file_path).hexdigest()] = file_path
+            md5_map[file_path] = hash_file(file_path).hexdigest()
     return md5_map
 
 def hash_file(path):
