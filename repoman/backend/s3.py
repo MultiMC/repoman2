@@ -1,6 +1,7 @@
 from repoman.backend import Backend
 
 import os, json, hashlib
+import ssl
 
 import boto
 from boto.s3.key import Key
@@ -12,6 +13,16 @@ class S3Backend(Backend):
     AWS IDs are read from environment variables.
     """
     def __init__(self, bucket_name):
+
+        # monkey-patch for boto bug: https://github.com/boto/boto/issues/2836
+        _old_match_hostname = ssl.match_hostname
+        def _new_match_hostname(cert, hostname):
+            if hostname.endswith('.s3.amazonaws.com'):
+                pos = hostname.find('.s3.amazonaws.com')
+            hostname = hostname[:pos].replace('.', '') + hostname[pos:]
+            return _old_match_hostname(cert, hostname)
+        ssl.match_hostname = _new_match_hostname
+
         self.conn = boto.connect_s3()
         self.bucket = self.conn.get_bucket(bucket_name)
 
