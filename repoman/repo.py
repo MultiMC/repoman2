@@ -92,6 +92,15 @@ class Collection(object):
                 for vsn in ch.all_versions_where(pred):
                     yield vsn
 
+    def all_latest_versions(self):
+        """
+        A generator which lists latest versions from the collection.
+        """
+        for p in self.list_platforms():
+            for ch in p.channels:
+                vsn = ch.get_latest_vsn()
+                yield vsn
+
     def get_config_path(self):
         return os.path.join(self.path, 'config.json')
 
@@ -256,8 +265,9 @@ class Channel(object):
     def get_latest_vsn(self):
         """Gets the channel's newest version."""
         # The last version in the list should be the newest one.
-        if len(self.versions > 0):
-            return sorted(self.versions, key=lambda v: v['id'])[len(self.versions)-1]
+        if len(self.versions) > 0:
+            v = sorted(self.versions, key=lambda v: int(v['id']))[len(self.versions)-1]
+            return self.get_version(v['id'])
         else: return None
 
     def all_versions_where(self, pred):
@@ -286,12 +296,14 @@ class Version(object):
     
     @classmethod
     def load(cls, backend, chan_dir, id, name):
-        print('Loading version "{0}" ({1}).'.format(name, id))
+        # print('Loading version "{0}" ({1}).'.format(name, id))
         b = backend
-        obj = b.read_json(os.path.join(chan_dir, str(id) + '.json'))
+        jsonFilename = os.path.join(chan_dir, str(id) + '.json')
+        # print("Reading: " + jsonFilename)
+        obj = b.read_json(jsonFilename)
         assert obj['ApiVersion'] == 0
         assert id == obj['Id']
-        assert name == obj['Name']
+        #assert name == obj['Name']
         files = []
         for file in obj['Files']:
             # We only support the 'http' type anyway, so we'll just load sources

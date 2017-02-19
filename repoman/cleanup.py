@@ -70,32 +70,64 @@ def orphan_files(collection, delete, **kwargs):
         for f in to_delete:
             storage.remove_file(f)
 
-@command('dead-versions',
-         #Argument('--delete', action='store_true', help='if given, remove dead versions'),
-         description="""Lists versions with missing files.""",
+@command('obsolete-files',
+         Argument('--delete', action='store_true', help='if given, kill obsolete files'),
+         description="""Removes obsolete files from storage.""",
 )
 @with_collection
-def dead_versions(collection, **kwargs):
+def obsolete_files(collection, delete, **kwargs):
+    storage = collection.storage
+
+    # Load a set of all files used.
+    files = latest_files(collection)
+    # Load a set of all files in storage.
+    storage_files = set(storage.get_all_files())
+    # Subtract used files.
+    to_delete = storage_files - files
+    to_keep = storage_files - to_delete
+    print('{0}'.format("\n".join(str(e) for e in to_delete)))
+    if delete:
+        for f in to_delete:
+            storage.remove_file(f)
+
+@command('live-versions',
+         description="""Lists versions that are not missing files.""",
+)
+@with_collection
+def live_versions(collection, **kwargs):
     storage = collection.storage
     storage_files = set(storage.get_all_files())
+    present_files = set()
     for vsn in collection.all_versions_where(lambda id, name: True):
         files = set()
         for f in vsn.files:
             for src in f.sources:
                 files.add(os.path.basename(src))
         dead_files = files - storage_files
-        if len(dead_files) > 0:
-            print('Version "{0}" ({1}) is dead. Dead files: {2}'.format(
-                vsn.name, vsn.id, dead_files))
-
+        if len(dead_files) == 0:
+            # print('{1}/{0}.json'.format(vsn.id, vsn.chan_dir))
+            present_files = present_files.union(files)
+    print('{0}'.format("\n".join(str(e) for e in present_files)))
 
 def linked_files(collection):
     """
-    Returns a set containing the file names of every file linked to in the given
+    Returns a set containing the file names of every file linked to by all versions in the given
     collection.
     """
     files = set()
     for vsn in collection.all_versions_where(lambda id, name: True):
+        for f in vsn.files:
+            for src in f.sources:
+                files.add(os.path.basename(src))
+    return files
+
+def latest_files(collection):
+    """
+    Returns a set containing the file names of every file linked to by the latest versions in the given
+    collection.
+    """
+    files = set()
+    for vsn in collection.all_latest_versions():
         for f in vsn.files:
             for src in f.sources:
                 files.add(os.path.basename(src))

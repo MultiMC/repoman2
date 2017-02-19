@@ -7,7 +7,7 @@ import repoman.repo as repo
 from repoman.push import push
 from repoman.pushfile import push_file
 from repoman.create import create, add_platform
-from repoman.cleanup import delete_old, mod_urls, orphan_files, dead_versions
+from repoman.cleanup import delete_old, mod_urls, orphan_files, obsolete_files, live_versions
 from repoman.command import command, with_collection
 from repoman.backend.disk import DiskBackend
 from repoman.backend.s3 import S3Backend
@@ -34,7 +34,8 @@ def main():
     add_command(subparsers, delete_old)
     add_command(subparsers, mod_urls)
     add_command(subparsers, orphan_files)
-    add_command(subparsers, dead_versions)
+    add_command(subparsers, obsolete_files)
+    add_command(subparsers, live_versions)
 
     args = parser.parse_args()
 
