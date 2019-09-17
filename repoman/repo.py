@@ -186,12 +186,12 @@ class Channel(object):
         desc = obj['description']
         url = obj['url']
         path = os.path.join(path, id)
-        
+
         # Load the index.json file.
         idx = b.read_json(os.path.join(path, 'index.json'))
         if idx['ApiVersion'] != 0:
             return None
-        
+
         versions = []
         for vsn_obj in idx['Versions']:
             # TODO: Maybe check if the version file exists?
@@ -250,6 +250,12 @@ class Channel(object):
         """
         v = Version(self.backend, self.path, id, name, files)
         v.save()
+
+        # Do not put duplicated version IDs into the index.
+        for v in self.versions:
+            if v['id'] == id:
+                return v
+
         self.versions.append(dict(id=id, name=name))
         self.save_index()
         return v
@@ -274,7 +280,7 @@ class Channel(object):
         """
         A generator which lists of every single version whose ID and name match
         the given predicate.
-        
+
         The predicate takes a tuple with the version ID and name and returns
         true or false indicating whether the version should be listed.
 
@@ -293,7 +299,7 @@ class Version(object):
     """
     Class for holding information about versions.
     """
-    
+
     @classmethod
     def load(cls, backend, chan_dir, id, name):
         # print('Loading version "{0}" ({1}).'.format(name, id))
